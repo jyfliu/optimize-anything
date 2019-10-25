@@ -1,0 +1,3 @@
+def solve(problem):
+    pass
+
