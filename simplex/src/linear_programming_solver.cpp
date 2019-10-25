@@ -83,7 +83,7 @@ namespace {
     const int m = A.cols();
     // N = [n] \ f
     VectorXd N = MatrixXd::Zero(n - basis.rows(), 1);
-    for (int i=0, j=0; i<n; i++) {
+    for (int i = 0, j = 0; i < n; ++i) {
       if ((basis.array() != i).any()) N(j++) = i;
     }
 
@@ -95,7 +95,53 @@ namespace {
     // solve A^T_B y=c_B
     VectorXd y = At_B.colPivHouseholderQr().solve(c);
 
-    // TODO
+    // compute c'_j = c_j - y^TA_j
+    // let k be the first index st c'_k > 0
+    // if no k exists then we have our optimal solution 
+    // (every other direction is worse)
+    int k = -1;
+    for (int i = 0; i < N.rows(); ++i) {
+      int j = N(i);
+      int cp_j = c(j) - (y.transpose() * A.row(j))(0);
+      if (cp_j > 0) {
+        k = cp_j;
+        break;
+      }
+    }
+    // we found optimal solution
+    if (k == -1) {
+      return Simplex::Result::Solved(bfs, y, (c.transpose() * bfs)(0));
+    }
+    VectorXd A_k = subRows(A, VectorXd(k));
+    VectorXd d = A_B.colPivHouseholderQr().solve(A_k);
+    // pick r with minimal x_r/d_r (=:xd)
+    int r = -1, alpha = -1;
+    for (int i = 0; i < d.rows(); ++i) {
+      if (d(i) <= 0) {
+        int xd = bfs(basis(i)) / d(i);
+        if (r == -1 or xd < alpha) {
+          r = i;
+          alpha = xd;
+        }
+      }
+    }
+    VectorXd dp(n, 1);
+    for (int j = 0, i = 0; j < n; ++j) {
+      if ((basis.array() == j).any()) dp(j) = -d(i++);
+      else if (j == k) dp(j) = 0;
+      else dp(j) = 1;
+    }
+    if (r == -1) {
+      return Simplex::Result::Unbounded(bfs, dp);
+    }
+    VectorXd x = bfs + alpha * dp;
+    VectorXd Bp(basis.rows());
+    for (int i = 0, j = 0; i < n; ++i) {
+      if (((basis.array() == j).any() and j != r) or j == k) {
+        Bp(i++) = j;
+      }
+    }
+    return solveSimplexBland(problem, x, Bp);
   }
 }
 
