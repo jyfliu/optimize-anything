@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cmath>
 
-const double epsilon = 1e-7;
+constexpr double epsilon = 1e-7;
 
 struct test_failed{ std::string msg; };
 
