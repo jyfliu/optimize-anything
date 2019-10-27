@@ -39,8 +39,8 @@ void test_solveSimplexBland() {
   Eigen::VectorXd bfs(7);
   bfs << 1, 1, 1, 1, 0, 0, 0;
   Simplex::LPProblem p(A, b, c);
-  Simplex::Result res = solveSimplexBland(p, bfs, basis, 1);
-  std::cout << res << std::endl;
+  Simplex::Result res = solveSimplexBland(p, bfs, basis, 0);
+  //std::cout << res << std::endl;
   ASSERT(res.status() == Simplex::Status::solved);
   double opt = 13.1818181818;
   Eigen::VectorXd sol(7);
@@ -55,9 +55,35 @@ void test_solveSimplexBland() {
 #undef ASSERT
 }
 
+void test_solveTwoPhaseSimplex() {
+#define ASSERT(x) assert(x and "test_solveTwoPhaseSimplex ")
+  Eigen::MatrixXd A(7, 7);
+  A << 1, 2, 2, 2, 2, 2, 2,
+       1, 1, 1, 2, 1, 1, 1,
+       1, 1, 2, 1, 4, -2, 0,
+       1, 2, 1, 1, -1, 4, 0,
+       2, 2, 3, 3, 5, -1, 1,
+       2, 3, 3, 4, 3, 3, 3,
+       0, 0, 1, -1, 3, -3, -1;
+
+  Eigen::VectorXd b(7);
+  b << 7, 5, 5, 5, 10, 12, 0;
+  Eigen::VectorXd c(7);
+  c << 1, 2, 2, 2, 6, 4, -4;
+  Simplex::LPProblem p(A, b, c);
+  Simplex::Result res = solveTwoPhaseSimplex(p, 0);
+  //std::cout << res << std::endl;
+  ASSERT(res.status() == Simplex::Status::solved);
+  double opt = 13.1818181818;
+  ASSERT(std::abs(res.optimalValue() - opt));
+#undef ASSERT
+}
+
+
 int main() {
   test_subRows();
   test_solveSimplexBland();
+  test_solveTwoPhaseSimplex();
   std::cout << "All tests passed." << std::endl;
   return 0;
 }

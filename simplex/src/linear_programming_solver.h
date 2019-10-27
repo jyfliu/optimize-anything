@@ -44,6 +44,7 @@ namespace Simplex {
     const Eigen::VectorXd &certificate() const noexcept;
   };
 
+  // an LP in SEF. TODO refactor
   class LPProblem {
   public:
     const Eigen::MatrixXd A;
@@ -56,7 +57,8 @@ namespace Simplex {
   Result solve(const LPProblem &problem);
 
   Result solveInteriorPoint(const LPProblem &problem);
-  Result solveTwoPhaseSimplex(const LPProblem &problem);
+  Result solveTwoPhaseSimplex(const LPProblem &problem, int debugPrint=0,
+                              double epsilon=1e-7);
 
 }
 

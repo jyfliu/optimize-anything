@@ -40,7 +40,7 @@ const Eigen::VectorXd &Simplex::Result::feasiblePoint() const
 const Eigen::VectorXd &Simplex::Result::unboundedRay() const
 { 
   if (_status == unbounded) return _certificate;
-  else throw invalid_operation();
+  else throw invalid_operation{};
 }
 
 const Eigen::VectorXd &Simplex::Result::certificate() const noexcept
@@ -79,6 +79,11 @@ Simplex::LPProblem::LPProblem(const Eigen::MatrixXd &A,
   if (A.cols() != c.rows()) throw size_mismatch();
 }
 
+std::ostream &operator<<(std::ostream &os, const Simplex::LPProblem p)
+{
+  os << "LP: "; // TODO finish
+  return os;
+}
 
 
 namespace {
@@ -118,16 +123,20 @@ namespace {
                                     int debugPrint = 0,
                                     int epsilon = 1e-7)
   {
+    // TODO add assertions to ensure input is clean
 #define DPRINT(d) if (debugPrint >= d) std::cout
 #define dout DPRINT(1)
+    using namespace Eigen;
+    dout << "\nStarting new iteration" << std::endl;
     dout << "Basic feasible solution: x̅ = [" << bfs.transpose() << "]^T";
     dout << std::endl;
     dout << "Corresponding basis: B = {" << basis.transpose() << "}";
     dout << std::endl;
-    using namespace Eigen;
     MatrixXd A(problem.A);
     VectorXd b(problem.b);
     VectorXd c(problem.c);
+    double oValue = (c.transpose() * bfs)(0);
+    dout << "Objective value: " << oValue << std::endl;
     const int n = A.cols();
     // N = [n] \ f
     VectorXi N(n - basis.rows());
@@ -143,7 +152,7 @@ namespace {
     // solve A^T_B y=c_B
     dout << "Solving A^T_B y = c_B..." << std::endl;
     VectorXd y = At_B.colPivHouseholderQr().solve(c_B);
-    dout << "Solution: y = [" << y.transpose() << "]^T\n" << std::endl;
+    dout << "Solution: y = [" << y.transpose() << "]^T" << std::endl;
 
     // compute c'_j = c_j - y^TA_j
     // let k be the first index st c'_k > 0
@@ -151,8 +160,8 @@ namespace {
     // (every other direction is worse)
     int k = -1;
     for (int i = 0; i < N.rows(); ++i) {
-      int j = N(i);
-      int cp_j = c(j) - (y.transpose() * A.col(j))(0);
+      const int j = N(i);
+      double cp_j = c(j) - (y.transpose() * A.col(j))(0);
       dout << "Computing c̅_" << j << " = c_" << j << " - y^T A_" << j;
       dout << std::endl;
       dout << "Solution: c̅_" << j << " = " <<  cp_j << std::endl;
@@ -164,7 +173,7 @@ namespace {
     // we found optimal solution
     if (k == -1) {
       dout << "No entering value exists, x̅ is optimal." << std::endl;
-      return Simplex::Result::Solved(bfs, y, (c.transpose() * bfs)(0));
+      return Simplex::Result::Solved(bfs, y, oValue);
     }
     dout << "Found entering indice k = " << k << std::endl;
     dout << "Solving A_b d = A_k" << std::endl;
@@ -217,6 +226,77 @@ Simplex::Result Simplex::solve(const Simplex::LPProblem &problem)
   return Simplex::solveTwoPhaseSimplex(problem);
 }
 
-Simplex::Result Simplex::solveTwoPhaseSimplex(const Simplex::LPProblem &problem)
-{ throw 0; }
+Simplex::Result Simplex::solveTwoPhaseSimplex(const Simplex::LPProblem &problem,
+                                              int debugPrint, double epsilon)
+{
+#define DPRINT(d) if (debugPrint >= d) std::cout
+#define dout DPRINT(1)
+  using namespace Eigen;
+  // Ax = b, x >= 0
+  // A = QRP^T
+  // QRP^Tx = b, x >= 0
+  // PHASE 1 problem: max [0 -1]^Ty st [R 1]y = Q^-1b, y >= 0
+  MatrixXd A = problem.A;
+  VectorXd b = problem.b;
+  VectorXd c = problem.c;
+
+  auto qr_decomp = A.colPivHouseholderQr();
+  int rank = qr_decomp.rank();
+  MatrixXd Q(qr_decomp.matrixQ());
+  // ensure that Ap has full row rank
+  MatrixXd R(qr_decomp.matrixQR()
+      .topRows(rank)
+      .triangularView<Upper>());
+  MatrixXd P(qr_decomp.colsPermutation());
+  dout << Q << std::endl << R << std::endl << P << std::endl;
+
+  MatrixXd Ap(R.rows(), R.cols() + rank);
+  for (int i = 0; i < R.cols(); ++i) { Ap.col(i) = R.col(i); }
+  VectorXd bp = (Q.inverse() * b).head(rank);
+  dout << "b\n" << bp << std::endl;
+  // ensure b has only non-negative entries
+  for (int i = 0; i < rank; ++i) {
+    if (bp(i) < 0) {
+      bp(i) *= -1;
+      Ap.row(i) *= -1;
+    }
+  }
+  for (int i = 0; i < rank; ++i) {
+    Ap.col(i + R.cols()) = VectorXd::Unit(rank, i);
+  }
+  VectorXd c_aux(R.cols() + rank);
+  for (int i = 0; i < R.cols(); ++i) { c_aux(i) = 0; }
+  for (int i = R.cols(); i < R.cols() + rank; ++i) { c_aux(i) = -1; }
+  VectorXi basis_aux(rank);
+  for (int i = 0; i < rank; ++i) { basis_aux(i) = i + R.cols(); }
+  VectorXd bfs_aux(R.cols() + rank);
+  for (int i = 0; i < R.cols(); ++i) { bfs_aux(i) = 0; }
+  for (int i = 0; i < rank; ++i) { bfs_aux(i + R.cols()) = bp(i); }
+
+  dout << "A:\n" << Ap << "\nb\n" << bp << "\nc\n" << c_aux << std::endl;
+  Simplex::LPProblem problem_aux(Ap, bp, c_aux);
+  Simplex::Result phase1Result = solveSimplexBland(
+    problem_aux, bfs_aux, basis_aux, debugPrint, epsilon
+  );
+  dout << phase1Result << std::endl;
+  if (phase1Result.optimalValue() < - epsilon) {
+    //TODO transform the certificate to obtain a certificate for the original problem
+    return Simplex::Result::Infeasible(phase1Result.certificate());
+  }
+  // PHASE 2 problem: max c^TPy st Ry = Q^-1b, y >= 0
+  VectorXd bfs_main = phase1Result.optimalSolution().head(R.cols());
+  VectorXi basis_main(rank);
+  for (int i = 0, j = 0; i < R.cols(); ++i) {
+    if (bfs_main(i) > epsilon) basis_main(j++) = i;
+  }
+  dout << bfs_main << std::endl << basis_main << std::endl;
+  VectorXd c_main = (c.transpose() * P).transpose();
+  dout << R << "\n" << bp << std::endl;
+  Simplex::LPProblem problem_main(R, bp, c_main);
+  return solveSimplexBland(
+    problem_main, bfs_main, basis_main, debugPrint, epsilon
+  );
+#undef DPRINT
+#undef dout
+}
 
