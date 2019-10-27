@@ -4,23 +4,23 @@
 
 #include <utility>
 #include <vector>
+#include <iostream>
 
 namespace Simplex {
   class invalid_operation{};
   class size_mismatch{};
+  enum Status { solved, unbounded, infeasible };
   /**
     * When result is
     *   solved => optimalSolution, optimalValue, certificate are defined
     *   unbounded => feasiblePoint, unboundedRay, certificate are defined
     *   infeasible => certificate is defined
     */
-  class Result { 
-    enum Status { solved, unbounded, infeasible };
+  class Result {
     Status _status;
     Eigen::VectorXd _certificate;
     Eigen::VectorXd _vector;
     double _data;
-    Result();
     Result(const Eigen::VectorXd &certificate);
     Result(const Eigen::VectorXd &certificate, const Eigen::VectorXd &vector);
     Result(const Eigen::VectorXd &certificate, const Eigen::VectorXd &vector,
