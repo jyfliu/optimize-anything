@@ -1,7 +1,6 @@
 #include "../src/linear_programming_solver.cpp"
 
-#include <iostream>
-#include <cmath>
+#include <iostream> #include <cmath>
 
 constexpr double epsilon = 1e-7;
 
@@ -75,7 +74,7 @@ void test_solveTwoPhaseSimplex() {
   //std::cout << res << std::endl;
   ASSERT(res.status() == Simplex::Status::solved);
   double opt = 13.1818181818;
-  ASSERT(std::abs(res.optimalValue() - opt));
+  ASSERT(std::abs(res.optimalValue() - opt) < epsilon);
 #undef ASSERT
 }
 

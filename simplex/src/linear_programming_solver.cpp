@@ -228,7 +228,7 @@ Simplex::Result Simplex::solve(const Simplex::LPProblem &problem)
 
 Simplex::Result Simplex::solveTwoPhaseSimplex(const Simplex::LPProblem &problem,
                                               int debugPrint, double epsilon)
-{
+{ // TODO write a version which works for rationals. Probably can not use qr_decomp
 #define DPRINT(d) if (debugPrint >= d) std::cout
 #define dout DPRINT(1)
   using namespace Eigen;
