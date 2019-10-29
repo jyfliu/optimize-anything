@@ -1,6 +1,7 @@
 #include "../src/linear_programming_solver.cpp"
 
-#include <iostream> #include <cmath>
+#include <iostream>
+#include <cmath>
 
 constexpr double epsilon = 1e-7;
 
@@ -38,7 +39,7 @@ void test_solveSimplexBland() {
   Eigen::VectorXd bfs(7);
   bfs << 1, 1, 1, 1, 0, 0, 0;
   Simplex::LPProblem p(A, b, c);
-  Simplex::Result res = solveSimplexBland(p, bfs, basis, 0);
+  Simplex::Result res = solveSimplexBland(p, bfs, basis, 1);
   //std::cout << res << std::endl;
   ASSERT(res.status() == Simplex::Status::solved);
   double opt = 13.1818181818;

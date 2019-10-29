@@ -175,7 +175,7 @@ namespace {
       dout << "No entering value exists, x̅ is optimal." << std::endl;
       return Simplex::Result::Solved(bfs, y, oValue);
     }
-    dout << "Found entering indice k = " << k << std::endl;
+    dout << "Found entering index k = " << k << std::endl;
     dout << "Solving A_b d = A_k" << std::endl;
     VectorXi vec_k(1); vec_k << k;
     VectorXd A_k = subCols(A, vec_k);
