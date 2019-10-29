@@ -17,6 +17,7 @@ A library for optimizing anything. Implemented in c++ and eigen, interface built
 (very far in the future todo)
 - other combinatorial optimization (euclidian tsp?)
 - stochastic programming
+- quadratic programming
 - robust optimization
 - semidefinite programming
 
