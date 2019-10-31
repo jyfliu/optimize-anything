@@ -1,46 +1,14 @@
+/**
+ * A good portion of this class is taken from the boost library.
+ * I wanted to learn some template metaprogramming and also I didn't want
+ * to download boost, so I remade it
+ */
 #pragma once
 
 #include <limits>
-
-#include "../Eigen/Core"
-
-namespace Simplex {
-  template <typename IntType> class rational;
-}
-
-namespace Eigen {
-  template <typename IntType>
-  struct NumTraits<Simplex::rational<IntType>> 
-    : Eigen::GenericNumTraits<Simplex::rational<IntType>>
-  {
-    typedef Simplex::rational<IntType> Real;
-    typedef Simplex::rational<IntType> NonInteger;
-    typedef Simplex::rational<IntType> Literal;
-    typedef Simplex::rational<IntType> Nested;
-
-    static inline Real epsilon() { return 0; }
-    static inline Real dummy_precision() { return 0; }
-    static inline Simplex::rational<IntType> highest() {
-      return std::numeric_limits<IntType>::max();
-    }
-    static inline Simplex::rational<IntType> lowest() {
-      return std::numeric_limits<IntType>::max();
-    }
-    static inline Simplex::rational<IntType> digits10() {
-      return std::numeric_limits<IntType>::digits10();
-    }
-
-    enum {
-      IsComplex = 0,
-      IsInteger = 0,
-      IsSigned = 0,
-      RequireInitialization = 1,
-      ReadCost = 1,
-      AddCost = 3,
-      MulCost = 3
-    };
-  };
-}
+#include <type_traits>
+#include <iostream>
+#include <cassert>
 
 namespace Simplex {
   class division_by_zero{};
@@ -54,20 +22,36 @@ namespace Simplex {
     int_type num, den;
     int_type gcd(int_type, int_type) const;
   public:
-    rational(): num{0}, den{1} {}
-    rational(const int_type &n): num{n}, den{1} {}
-    rational(const int_type &num, const int_type &den): num{num}, den{den} {
-      normalize();
-    }
-    template <typename NewType>
-    rational(const rational<NewType> &r): num{r.num}, den{r.den} {}
+    rational(): num(0), den(1) {}
 
-    rational &operator=(const IntType &n) {
-      return assign(n, 1);
-    }
-    rational &assign(const IntType &num, const IntType &dem) {
-      this->num = num; this->dem = dem;
-    }
+    template <typename NewType,
+              std::enable_if_t<std::is_integral<NewType>::value, int> = 0
+    >
+    rational(const NewType &n): num(n), den(1) {}
+
+    template <typename NewType,
+              std::enable_if_t<std::is_integral<NewType>::value, int> = 0
+    >
+    rational(const NewType &num, const NewType &den): num(num), den(den)
+    { normalize(); }
+
+    template <typename NewType,
+              std::enable_if_t<std::is_integral<NewType>::value
+                           and std::is_integral<NewType>::value, int> = 0
+    >
+    rational(const rational<NewType> &r): num(r.num), den(r.den) {}
+
+    template <typename NewType,
+              std::enable_if_t<std::is_integral<NewType>::value, int> = 0
+    >
+    rational &operator=(const NewType &n)
+    { return assign(n, 1); }
+
+    template <typename NewType,
+              std::enable_if_t<std::is_integral<NewType>::value, int> = 0
+    >
+    rational &assign(const NewType &num, const NewType &den)
+    { this->num = num; this->den = den; return *this; }
 
     rational &operator+=(const rational &r);
     rational &operator-=(const rational &r);
@@ -78,16 +62,6 @@ namespace Simplex {
     rational operator-(const rational &r) const;
     rational operator*(const rational &r) const;
     rational operator/(const rational &r) const;
-
-    rational &operator+=(const int_type &n);
-    rational &operator-=(const int_type &n);
-    rational &operator*=(const int_type &n);
-    rational &operator/=(const int_type &n);
-
-    rational operator+(const int_type &n) const;
-    rational operator-(const int_type &n) const;
-    rational operator*(const int_type &n) const;
-    rational operator/(const int_type &n) const;
 
     rational operator+() const;
     rational operator-() const;
@@ -114,6 +88,7 @@ namespace Simplex {
 
     const int_type &numerator() const { return num; }
     const int_type &denominator() const { return den; }
+
   };
 
   template <typename I>
@@ -135,10 +110,10 @@ namespace Simplex {
 
     I g = gcd(den, r_den);
     den /= g;
-    num = num * (r_den / g) + r_num * den;
-    g = gcd(num, g);
-    num /= g;
+    num = num * (r_den / g) + r_num * den; g = gcd(num, g); num /= g;
     den *= r_den/g;
+
+    return *this;
   }
 
   template <typename I>
@@ -215,38 +190,6 @@ namespace Simplex {
   template <typename I>
   rational<I> rational<I>::operator/(const rational<I> &r) const
   { rational<I> s(*this); return s /= r; }
-
-  template <typename I>
-  rational<I> &rational<I>::operator+=(const I &n)
-  { num += n * den; return *this; }
-
-  template <typename I>
-  rational<I> &rational<I>::operator-=(const I &n)
-  { num -= n * den; return *this; }
-
-  template <typename I>
-  rational<I> &rational<I>::operator*=(const I &n)
-  { num += n * den; return *this; }
-
-  template <typename I>
-  rational<I> &rational<I>::operator/=(const I &n)
-  { num += n * den; return *this; }
-
-  template <typename I>
-  rational<I> rational<I>::operator+(const I &n) const
-  { rational<I> a(*this); return a += n; }
-
-  template <typename I>
-  rational<I> rational<I>::operator-(const I &n) const
-  { rational<I> a(*this); return a -= n; }
-
-  template <typename I>
-  rational<I> rational<I>::operator*(const I &n) const
-  { rational<I> a(*this); return a *= n; }
-
-  template <typename I>
-  rational<I> rational<I>::operator/(const I &n) const
-  { rational<I> a(*this); return a /= n; }
 
   template <typename I>
   rational<I> rational<I>::operator+() const { return *this; }
@@ -392,7 +335,144 @@ namespace Simplex {
     // (Nominally, this should be done before the mutating steps, but this
     // member function is only called during the constructor, so we never have
     // to worry about zombie objects.)
-    if (den < zero) throw -100; // ??
+    if (den < zero) throw -100; // ???
   }
+
+  template <typename I>
+  inline const rational<I> conj(const rational<I> &x) { return x; }
+
+  template <typename I>
+  inline const rational<I> real(const rational<I> &x) { return x; }
+
+  template <typename I>
+  inline const rational<I> imag(const rational<I> &x) { return 0; }
+
+  template <typename I>
+  inline const rational<I> abs(const rational<I> &x) { return x > 0? x : -x; }
+
+  template <typename I>
+  inline const rational<I> abs2(const rational<I> &x) { return x * x; }
+
+  template <typename I>
+  inline const rational<I> sqrt(const rational<I> &x) { 
+    std::cout << x << std::endl;
+    I num_root(-1), den_root(-1);
+    for (I i(0); i * i <= x.numerator(); ++i) {
+      if ((x.numerator() % i == 0) and (x.numerator() / i == i))
+        num_root = i;
+    }
+    if (num_root == -1)
+      throw -213498; // tried to take square root of non square
+    for (I i(0); i * i <= x.denominator(); ++i) {
+      if ((x.denominator() % i == 0) and (x.denominator() / i == i))
+        den_root = i;
+    }
+    if (num_root == -1)
+      throw -213498; // tried to take square root of non square
+    return rational<I>(num_root, den_root);
+  }
+
+  template <typename T, typename I,
+            std::enable_if_t<std::is_integral<T>::value, int> = 0
+  >
+  inline bool operator<(const T &a, const rational<I> &b)
+  { return b > a; }
+
+  template <typename T, typename I,
+            std::enable_if_t<std::is_integral<T>::value, int> = 0
+  >
+  inline bool operator<=(const T &a, const rational<I> &b)
+  { return b >= a; }
+
+  template <typename T, typename I,
+            std::enable_if_t<std::is_integral<T>::value, int> = 0
+  >
+  inline bool operator==(const T &a, const rational<I> &b)
+  { return b == a; }
+
+  template <typename T, typename I,
+            std::enable_if_t<std::is_integral<T>::value, int> = 0
+  >
+  inline bool operator>=(const T &a, const rational<I> &b)
+  { return b <= a; }
+
+  template <typename T, typename I,
+            std::enable_if_t<std::is_integral<T>::value, int> = 0
+  >
+  inline bool operator>(const T &a, const rational<I> &b)
+  { return b < a; }
+
+  template <typename T, typename I,
+            std::enable_if_t<std::is_integral<T>::value, int> = 0
+  >
+  inline bool operator!=(const T &a, const rational<I> &b)
+  { return b != a; }
+
+  template <typename T, typename I,
+            std::enable_if_t<std::is_integral<T>::value, int> = 0
+  >
+  inline rational<I> operator+(const T &a, const rational<I> &r)
+  { rational<I> s(r); return s += a; }
+  
+  template <typename T, typename I,
+            std::enable_if_t<std::is_integral<T>::value, int> = 0
+  >
+  inline rational<I> operator-(const T &a, const rational<I> &r)
+  { rational<I> s(r); return s -= a; }
+
+  template <typename T, typename I,
+            std::enable_if_t<std::is_integral<T>::value, int> = 0
+  >
+  inline rational<I> operator*(const T &a, const rational<I> &r)
+  { rational<I> s(r); return s *= a; }
+
+  template <typename T, typename I,
+            std::enable_if_t<std::is_integral<T>::value, int> = 0
+  >
+  inline rational<I> operator/(const T &a, const rational<I> &r)
+  { rational<I> s(r); return s /= a; }
+
+  template <typename I>
+  std::ostream &operator<<(std::ostream &os, const Simplex::rational<I> &r)
+  { os << r.numerator() << " / " << r.denominator(); return os; }
+
 }
+
+
+#include "../Eigen/Core"
+
+namespace Eigen {
+  template <typename IntType>
+  struct NumTraits<Simplex::rational<IntType>> 
+    : Eigen::GenericNumTraits<Simplex::rational<IntType>>
+  {
+    typedef Simplex::rational<IntType> Real;
+    typedef Simplex::rational<IntType> NonInteger;
+    typedef Simplex::rational<IntType> Literal;
+    typedef Simplex::rational<IntType> Nested;
+
+    static inline Real epsilon() { return 0; }
+    static inline Real dummy_precision() { return 0; }
+    static inline Simplex::rational<IntType> highest() {
+      return std::numeric_limits<IntType>::max();
+    }
+    static inline Simplex::rational<IntType> lowest() {
+      return std::numeric_limits<IntType>::max();
+    }
+    static inline int digits10() {
+      return std::numeric_limits<IntType>::digits10;
+    }
+
+    enum {
+      IsComplex = 0,
+      IsInteger = 0,
+      IsSigned = 0,
+      RequireInitialization = 1,
+      ReadCost = 1,
+      AddCost = 3,
+      MulCost = 3
+    };
+  };
+}
+
 

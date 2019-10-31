@@ -9,6 +9,14 @@
 namespace Simplex {
   class invalid_operation{};
   class size_mismatch{};
+
+  // typedef a vector of field members
+  template <typename FieldType>
+  using Vector = Eigen::Matrix<FieldType, Eigen::Dynamic, 1>;
+
+  template <typename FieldType>
+  using Matrix = Eigen::Matrix<FieldType, Eigen::Dynamic, Eigen::Dynamic>;
+
   enum Status { solved, unbounded, infeasible };
   /**
     * When result is
@@ -16,49 +24,66 @@ namespace Simplex {
     *   unbounded => feasiblePoint, unboundedRay, certificate are defined
     *   infeasible => certificate is defined
     */
+  template <typename FieldType>
   class Result {
     Status _status;
-    Eigen::VectorXd _certificate;
-    Eigen::VectorXd _vector;
-    double _data;
-    Result(const Eigen::VectorXd &certificate);
-    Result(const Eigen::VectorXd &certificate, const Eigen::VectorXd &vector);
-    Result(const Eigen::VectorXd &certificate, const Eigen::VectorXd &vector,
-           double data);
+    Vector<FieldType> _certificate;
+    Vector<FieldType> _vector;
+    FieldType _data;
+    Result(const Vector<FieldType> &certificate);
+    Result(const Vector<FieldType> &certificate,
+           const Vector<FieldType> &vector);
+    Result(const Vector<FieldType> &certificate,
+           const Vector<FieldType> &vector,
+           FieldType data);
   public:
-    static Result Solved(const Eigen::VectorXd &optimalSolution,
-                         const Eigen::VectorXd &optimalCertificate,
-                         double optimalValue);
-    static Result Unbounded(const Eigen::VectorXd &initial,
-                            const Eigen::VectorXd &ray);
-    static Result Infeasible(const Eigen::VectorXd &infeasible);
+    static Result Solved(const Vector<FieldType> &optimalSolution,
+                         const Vector<FieldType> &optimalCertificate,
+                         FieldType optimalValue);
+    static Result Unbounded(const Vector<FieldType> &initial,
+                            const Vector<FieldType> &ray);
+    static Result Infeasible(const Vector<FieldType> &infeasible);
 
     Status status() const noexcept;
 
-    const Eigen::VectorXd &optimalSolution() const;
-    double optimalValue() const;
+    const Vector<FieldType> &optimalSolution() const;
+    FieldType optimalValue() const;
 
-    const Eigen::VectorXd &feasiblePoint() const;
-    const Eigen::VectorXd &unboundedRay() const;
+    const Vector<FieldType> &feasiblePoint() const;
+    const Vector<FieldType> &unboundedRay() const;
 
-    const Eigen::VectorXd &certificate() const noexcept;
+    const Vector<FieldType> &certificate() const noexcept;
   };
 
-  // an LP in SEF. TODO refactor
+  // an LP in SEF. TODO refactor and support LPs in other forms
+  template <typename FieldType>
   class LPProblem {
   public:
-    const Eigen::MatrixXd A;
-    const Eigen::VectorXd b;
-    const Eigen::VectorXd c;
-    LPProblem(const Eigen::MatrixXd &A, const Eigen::VectorXd &b,
-              const Eigen::VectorXd &c);
+    const Matrix<FieldType> A;
+    const Vector<FieldType> b;
+    const Vector<FieldType> c;
+    LPProblem(const Matrix<FieldType> &A, const Vector<FieldType> &b,
+              const Vector<FieldType> &c);
   };
 
-  Result solve(const LPProblem &problem);
+  template <typename FieldType>
+  Result<FieldType> solve(const LPProblem<FieldType> &problem);
 
-  Result solveInteriorPoint(const LPProblem &problem);
-  Result solveTwoPhaseSimplex(const LPProblem &problem, int debugPrint=0,
-                              double epsilon=1e-7);
+  template <typename FieldType>
+  Result<FieldType> solveInteriorPoint(const LPProblem<FieldType> &problem);
+
+  template <typename FieldType>
+  Result<FieldType> solveTwoPhaseSimplex(const LPProblem<FieldType> &problem,
+                                         int debugPrint=0,
+                                         FieldType epsilon=1e-7);
+
+  template <typename FieldType>
+  std::ostream &operator<<(std::ostream &os,
+                           const Simplex::Result<FieldType> &r);
+
+  template <typename FieldType>
+  std::ostream &operator<<(std::ostream &os,
+                           const Simplex::LPProblem<FieldType> &p);
 
 }
 

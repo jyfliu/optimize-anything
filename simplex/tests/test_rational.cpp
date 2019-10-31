@@ -73,7 +73,22 @@ void test_arithmetic() {
 // test < <= == >= > !=
 void test_comparisons() {
 #define A(x) assert(x and "test_comparisons ")
+  R r0(1272, 235);
+  R r1(1272, 2030);
+  A(3 < r0);
+  A(r0 < 10);
+  A(r1 < r0);
+#undef A
+}
 
+void test_stdout() {
+#define A(x) assert(x and "test_arithmetic ")
+  R r0(21123512,1235123523);
+  R r1(-93215,12351293);
+  R r2(321000, 50000);
+  R r3(0, 1);
+  std::cout << r0 << std::endl << r1 << "\n" << r2 << "\n";
+  std::cout << r3 << std::endl;
 #undef A
 }
 
@@ -81,6 +96,7 @@ int main() {
   test_constructors();
   test_arithmetic();
   test_comparisons();
+  test_stdout();
   std::cout<<"All tests passed." << std::endl;
 }
 
