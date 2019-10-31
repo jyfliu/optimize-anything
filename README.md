@@ -13,6 +13,7 @@ A library for optimizing anything. Implemented in c++ and eigen, interface built
 - Christofides algorithm (tsp)
 - gradient descent
 - simulated annealing (application: CCO 2018 problem 2)
+- applications
 
 (very far in the future todo)
 - other combinatorial optimization (euclidian tsp?)
