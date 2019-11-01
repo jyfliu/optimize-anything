@@ -438,7 +438,6 @@ namespace Simplex {
 
 }
 
-
 #include "../Eigen/Core"
 
 namespace Eigen {

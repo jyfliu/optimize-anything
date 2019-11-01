@@ -1,5 +1,3 @@
-#include "eigen_utils.h"
-
 #include "linear_programming_solver.h"
 
 
@@ -125,7 +123,9 @@ namespace {
       const Simplex::Vector<FieldType> &bfs,
       const Eigen::VectorXi &basis,
       int debugPrint = 0,
-      FieldType epsilon = 1e-7)
+      FieldType epsilon = 1e-7,
+      Simplex::Solver<FieldType> solve=
+          Simplex::ColPivHouseholderQRSolver<FieldType>)
   {
     // TODO add assertions to ensure input is clean
 #define DPRINT(d) if (debugPrint >= d) std::cout
@@ -157,7 +157,7 @@ namespace {
 
     // solve A^T_B y=c_B
     dout << "Solving A^T_B y = c_B..." << std::endl;
-    Vector<FieldType> y = At_B.colPivHouseholderQr().solve(c_B);
+    Vector<FieldType> y = solve(At_B, c_B);
     dout << "Solution: y = [" << y.transpose() << "]^T" << std::endl;
 
     // compute c'_j = c_j - y^TA_j
@@ -185,7 +185,7 @@ namespace {
     dout << "Solving A_b d = A_k" << std::endl;
     VectorXi vec_k(1); vec_k << k;
     Vector<FieldType> A_k = Simplex::subCols(A, vec_k);
-    Vector<FieldType> d = A_B.colPivHouseholderQr().solve(A_k);
+    Vector<FieldType> d = solve(A_B, A_k);
     dout << "Solution: d = [" << d.transpose() << "]^T" << std::endl;
 
     // pick r with minimal x_r/d_r (=:xd)
@@ -221,7 +221,7 @@ namespace {
       }
     }
     assert(i == basis.rows() and "something went wrong, basis creation ");
-    return solveSimplexBland(problem, x, Bp, debugPrint, epsilon);
+    return solveSimplexBland(problem, x, Bp, debugPrint, epsilon, solve);
 #undef DPRINT
 #undef dout
   }
@@ -230,21 +230,29 @@ namespace {
 template <typename FieldType>
 Simplex::Result<FieldType> Simplex::solve(const Simplex::LPProblem<FieldType> &problem)
 { // TODO: use different solvers
-  return Simplex::solveTwoPhaseSimplex(problem);
+  return Simplex::solveTwoPhaseSimplexQR(problem);
 }
 
+/**
+ * Solves the simplex algorithm but makes use of Eigen's built in
+ * colPivHouseholderQr function. Unfortunately the householder reflections
+ * eventually make use of a single call to the sqrt function, so this function
+ * will not work for types that do not support it (rationals, for instance).
+ *
+ * However it is slightly faster (I think) for scalars which do support sqrt
+ */
 template <typename FieldType>
-Simplex::Result<FieldType> Simplex::solveTwoPhaseSimplex(
+Simplex::Result<FieldType> Simplex::solveTwoPhaseSimplexQR(
     const Simplex::LPProblem<FieldType> &problem,
     int debugPrint, FieldType epsilon)
-{ // TODO write a version which works for rationals. Probably can not use qr_decomp
+{
 #define DPRINT(d) if (debugPrint >= d) std::cout
 #define dout DPRINT(1)
   using namespace Eigen;
   // Ax = b, x >= 0
   // A = QRP^T
   // QRP^Tx = b, x >= 0
-  // PHASE 1 problem: max [0 -1]^Ty st [R 1]y = Q^-1b, y >= 0
+  // PHASE 1 problem: max [0 -1]^Ty st [R I]y = Q^-1b, y >= 0
   Matrix<FieldType> A = problem.A;
   Vector<FieldType> b = problem.b;
   Vector<FieldType> c = problem.c;
@@ -307,5 +315,92 @@ Simplex::Result<FieldType> Simplex::solveTwoPhaseSimplex(
   );
 #undef DPRINT
 #undef dout
+}
+
+/**
+ * This should work without a sqrt (it's just Gauss elimination)
+ */
+template <typename FieldType>
+Simplex::Result<FieldType> Simplex::solveTwoPhaseSimplexLU(
+    const Simplex::LPProblem<FieldType> &problem,
+    int debugPrint, FieldType epsilon)
+{
+  // Ax = b, x >= 0
+  // A = QRP^T
+  // QRP^Tx = b, x >= 0
+  // PHASE 1 problem: max [0 -1]^Ty st [R 1]y = Q^-1b, y >= 0
+  //
+  // Ax=b, x>=0
+  // PAQ = LU => A = P^TLUQ^T
+  // P^TLUQ^Tx = b, x >= 0, u has first rank A rows filled, l has full rank
+  // PHASE 1 problem: max [0 -1]^Ty st [U I]y = L^-1P^Tb, y >= 0
+
+  Matrix<FieldType> A = problem.A;
+  Vector<FieldType> b = problem.b;
+  Vector<FieldType> c = problem.c;
+
+  std::cout << "HI"<<std::endl;
+  auto lu = A.fullPivLu();
+  int rank = lu.rank();
+
+  Matrix<FieldType> L = Matrix<FieldType>::Identity(A.rows(), A.rows());
+  L.template triangularView<Eigen::StrictlyLower>() = lu.matrixLU();
+
+  std::cout << "HI"<<std::endl;
+  Matrix<FieldType> U = lu.matrixLU()
+    .topRows(rank)
+    .template triangularView<Eigen::Upper>();
+  Matrix<FieldType> P = lu.permutationP();
+  Matrix<FieldType> Q = lu.permutationQ();
+
+  std::cout << "HI"<<std::endl;
+  // ensure that Ap has full row rank
+  Matrix<FieldType> Ap(U.rows(), U.cols() + rank);
+  for (int i = 0; i < U.cols(); ++i) { Ap.col(i) = U.col(i); }
+
+  Vector<FieldType> bp = (L.inverse() * P.transpose() * b).head(rank);
+  // ensure b has only non-negative entries
+  for (int i = 0; i < rank; ++i) {
+    if (bp(i) < 0) {
+      bp(i) *= -1;
+      Ap.row(i) *= -1;
+    }
+  }
+  for (int i = 0; i < rank; ++i) {
+    Ap.col(i + U.cols()) = Vector<FieldType>::Unit(rank, i);
+  }
+  // generate objective function, basic feasible solution, basis
+  Vector<FieldType> c_aux(U.cols() + rank);
+  for (int i = 0; i < U.cols(); ++i) { c_aux(i) = 0; }
+  for (int i = U.cols(); i < U.cols() + rank; ++i) { c_aux(i) = -1; }
+  Eigen::VectorXi basis_aux(rank);
+  for (int i = 0; i < rank; ++i) { basis_aux(i) = i + U.cols(); }
+  Vector<FieldType> bfs_aux(U.cols() + rank);
+  for (int i = 0; i < U.cols(); ++i) { bfs_aux(i) = 0; }
+  for (int i = 0; i < rank; ++i) { bfs_aux(i + U.cols()) = bp(i); }
+ 
+  Simplex::LPProblem<FieldType> problem_aux(Ap, bp, c_aux); 
+  Simplex::Result<FieldType> phase1Result = solveSimplexBland<FieldType>(
+    problem_aux, bfs_aux, basis_aux, debugPrint, epsilon,
+    Simplex::FullPivLUSolver<FieldType>
+  );
+  if (phase1Result.optimalValue() < - epsilon) {
+    //TODO transform the certificate to obtain a certificate for the original problem
+    return Simplex::Result<FieldType>::Infeasible(phase1Result.certificate());
+  }
+  // y = Q^T x => x = Qy
+  // PHASE 2 problem: max c^TQy st Uy = L^-1P^Tb, y >= 0
+  Vector<FieldType> bfs_main = phase1Result.optimalSolution().head(U.cols());
+  Eigen::VectorXi basis_main(rank);
+  for (int i = 0, j = 0; i < U.cols(); ++i) {
+    if (bfs_main(i) > epsilon) basis_main(j++) = i;
+  }
+  Vector<FieldType> c_main = (c.transpose() * Q).transpose();
+
+  Simplex::LPProblem<FieldType> problem_main(U, bp, c_main);
+  return solveSimplexBland<FieldType>(
+    problem_main, bfs_main, basis_main, debugPrint, epsilon,
+    Simplex::FullPivLUSolver<FieldType>
+  );
 }
 

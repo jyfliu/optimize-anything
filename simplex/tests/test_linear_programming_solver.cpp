@@ -39,6 +39,40 @@ void test_solveSimplexBland() {
 #undef ASSERT
 }
 
+void test_solveSimplexBlandRational() {
+#define ASSERT(x) assert(x and "test_solveSimplexBlandRational ")
+  typedef Simplex::rational<int> Q;
+  Eigen::Matrix<Q, -1, -1> A(4, 7);
+  A << 1, 2, 2, 2, 2, 2, 2,
+       1, 1, 1, 2, 1, 1, 1,
+       1, 1, 2, 1, 4, -2, 0,
+       1, 2, 1, 1, -1, 4, 0;
+  Eigen::Matrix<Q, -1, 1> b(4);
+  b << 7, 5, 5, 5;
+  Eigen::Matrix<Q, -1, 1> c(7);
+  c << 1, 2, 2, 2, 6, 4, -4;
+  Eigen::VectorXi basis(4);
+  basis << 0, 1, 2, 3;
+  Eigen::Matrix<Q, -1, 1> bfs(7);
+  bfs << 1, 1, 1, 1, 0, 0, 0;
+  Simplex::LPProblem<Q> p(A, b, c);
+  Simplex::Result<Q> res = solveSimplexBland<Q>(p, bfs, basis, 0, Q(0),
+      Simplex::FullPivLUSolver<Q>);
+  //std::cout << res << std::endl;
+  ASSERT(res.status() == Simplex::Status::solved);
+  Q opt = Q(145, 11);
+  //Eigen::VectorXd sol(7);
+  //sol << 1.9090909090, 0, 0, 0.5454545454, 1.0909090909, 0.9090909090, 0;
+  //Eigen::VectorXd cer(4);
+  //cer << 4.0909090909, -3.0909090909, 0.1818181818, -0.1818181818;
+  ASSERT(res.optimalValue() == opt);
+  //for (int i = 0; i < 7; ++i)
+    //ASSERT(std::abs(res.optimalSolution()(i) - sol(i)) < epsilon);
+  //for (int i = 0; i < 4; ++i)
+    //ASSERT(std::abs(res.certificate()(i) - cer(i)) < epsilon);
+#undef ASSERT
+}
+
 void test_solveTwoPhaseSimplex() {
 #define ASSERT(x) assert(x and "test_solveTwoPhaseSimplex ")
   Eigen::MatrixXd A(7, 7);
@@ -55,7 +89,7 @@ void test_solveTwoPhaseSimplex() {
   Eigen::VectorXd c(7);
   c << 1, 2, 2, 2, 6, 4, -4;
   Simplex::LPProblem<double> p(A, b, c);
-  Simplex::Result<double> res = solveTwoPhaseSimplex(p, 0);
+  Simplex::Result<double> res = solveTwoPhaseSimplexQR(p, 0);
   //std::cout << res << std::endl;
   ASSERT(res.status() == Simplex::Status::solved);
   double opt = 13.1818181818;
@@ -64,7 +98,7 @@ void test_solveTwoPhaseSimplex() {
 }
 
 void test_solveTwoPhaseSimplexRational() {
-#define ASSERT(x) assert(x and "test_solveTwoPhaseSimplex ")
+#define ASSERT(x) assert(x and "test_solveTwoPhaseSimplexRational ")
   typedef Simplex::rational<int> Q;
 
   Eigen::Matrix<Q, -1,-1> A(7, 7);
@@ -81,8 +115,8 @@ void test_solveTwoPhaseSimplexRational() {
   Eigen::Matrix<Q, -1, 1> c(7);
   c << 1, 2, 2, 2, 6, 4, -4;
   Simplex::LPProblem<Q> p(A, b, c);
-  Simplex::Result<Q> res = solveTwoPhaseSimplex(p, 1, Q(0));
-  std::cout << res << std::endl;
+  Simplex::Result<Q> res = solveTwoPhaseSimplexLU(p, 0, Q(0));
+  //std::cout << res << std::endl;
   ASSERT(res.status() == Simplex::Status::solved);
   Q opt = Q(145, 11);
   ASSERT(res.optimalValue() == opt);
@@ -92,6 +126,7 @@ void test_solveTwoPhaseSimplexRational() {
 
 int main() {
   test_solveSimplexBland();
+  test_solveSimplexBlandRational();
   test_solveTwoPhaseSimplex();
   test_solveTwoPhaseSimplexRational();
   std::cout << "All tests passed." << std::endl;

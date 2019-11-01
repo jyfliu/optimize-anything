@@ -1,10 +1,12 @@
 #pragma once
 
+#include "eigen_utils.h"
 #include "../Eigen/Dense"
 
 #include <utility>
 #include <vector>
 #include <iostream>
+#include <functional>
 
 namespace Simplex {
   class invalid_operation{};
@@ -73,9 +75,14 @@ namespace Simplex {
   Result<FieldType> solveInteriorPoint(const LPProblem<FieldType> &problem);
 
   template <typename FieldType>
-  Result<FieldType> solveTwoPhaseSimplex(const LPProblem<FieldType> &problem,
-                                         int debugPrint=0,
-                                         FieldType epsilon=1e-7);
+  Result<FieldType> solveTwoPhaseSimplexQR(const LPProblem<FieldType> &problem, 
+                                           int debugPrint=0,
+                                           FieldType epsilon=1e-7);
+
+  template <typename FieldType>
+  Result<FieldType> solveTwoPhaseSimplexLU(const LPProblem<FieldType> &problem, 
+                                           int debugPrint=0,
+                                           FieldType epsilon=1e-7);
 
   template <typename FieldType>
   std::ostream &operator<<(std::ostream &os,
