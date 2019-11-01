@@ -82,7 +82,7 @@ void test_comparisons() {
 }
 
 void test_stdout() {
-#define A(x) assert(x and "test_arithmetic ")
+#define A(x) assert(x and "test_stdout ")
   R r0(21123512,1235123523);
   R r1(-93215,12351293);
   R r2(321000, 50000);
@@ -92,11 +92,34 @@ void test_stdout() {
 #undef A
 }
 
+void test_infty() {
+#define A(x) assert(x and "test_infty ")
+  R r0(21123512,1235123523);
+  R r1(-93215,12351293);
+  R r2(0, 1);
+  R pinf = R::pos_inf();
+  R ninf = R::neg_inf();
+  A(r0 < pinf);
+  A(ninf < r0);
+  A(r1 < pinf);
+  A(ninf < r1);
+  A(r2 < pinf);
+  A(ninf < r2);
+  A(ninf < pinf);
+  A(ninf != pinf);
+  A(pinf == pinf);
+  A(ninf == ninf);
+  A(ninf != r2);
+  A(pinf != r2);
+#undef A
+}
+
 int main() {
   test_constructors();
   test_arithmetic();
   test_comparisons();
   test_stdout();
+  test_infty();
   std::cout<<"All tests passed." << std::endl;
 }
 

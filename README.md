@@ -2,8 +2,9 @@
 A library for optimizing anything. Implemented in c++ and eigen, interface built with python and sympy.
 
 ## Features:
-- Rational numbers and symbolic computation
+- Rational numbers and symbolic computation (of Euclidean constructible integers)
 - Two phase simplex algorithm (with Bland's rule)
+- branch and cut algorithm
 
 (todo)
 - Fourier-Motzkin Elimination

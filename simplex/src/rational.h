@@ -12,14 +12,23 @@
 
 namespace Simplex {
   class division_by_zero{};
+  class arithmetic_with_infinity{};
 
   // loosely inspired by boost::rational
   // some code was copy/pasted and reformatted
   // again I don't really own any of this stuff
+  /**
+   * Rational supports the usual arithmetic operators and comparisons, as well
+   * as a handful of math functions. They're represented internally as two
+   * IntTypes, wtih the addition of two special objects positive infinity
+   * and negative infinity which compare as you'd expect with any other
+   * rational.
+   */
   template <typename IntType>
   class rational {
     typedef IntType int_type;
     int_type num, den;
+    short inf = 0;
     int_type gcd(int_type, int_type) const;
   public:
     rational(): num(0), den(1) {}
@@ -36,10 +45,17 @@ namespace Simplex {
     { normalize(); }
 
     template <typename NewType,
+              std::enable_if_t<std::is_integral<NewType>::value, int> = 0
+    >
+    rational(const NewType &num, const NewType &den, short inf)
+      : num(num), den(den), inf{inf}
+    { normalize(); }
+
+    template <typename NewType,
               std::enable_if_t<std::is_integral<NewType>::value
                            and std::is_integral<NewType>::value, int> = 0
     >
-    rational(const rational<NewType> &r): num(r.num), den(r.den) {}
+    rational(const rational<NewType> &r): num(r.num), den(r.den), inf{r.inf} {}
 
     template <typename NewType,
               std::enable_if_t<std::is_integral<NewType>::value, int> = 0
@@ -50,8 +66,8 @@ namespace Simplex {
     template <typename NewType,
               std::enable_if_t<std::is_integral<NewType>::value, int> = 0
     >
-    rational &assign(const NewType &num, const NewType &den)
-    { this->num = num; this->den = den; return *this; }
+    rational &assign(const NewType &num, const NewType &den, short inf=0)
+    { this->num = num; this->den = den; this->inf = inf; return *this; }
 
     rational &operator+=(const rational &r);
     rational &operator-=(const rational &r);
@@ -89,6 +105,14 @@ namespace Simplex {
     const int_type &numerator() const { return num; }
     const int_type &denominator() const { return den; }
 
+    // warning: attempting to do math with either infinity will instantly
+    // throw an exception
+    // TODO: can probably cache these values somewhere
+
+    // will compare greater than any other rational
+    static rational pos_inf() { return rational(1, 0, 1); }
+    // will compare less than any other rational
+    static rational neg_inf() { return rational(-1, 0, -1); }
   };
 
   template <typename I>
@@ -103,6 +127,9 @@ namespace Simplex {
   template <typename I>
   rational<I> &rational<I>::operator+=(const rational<I> &r)
   {
+    if (inf) throw arithmetic_with_infinity{};
+    if (r.inf) throw arithmetic_with_infinity{};
+
     // This calculation avoids overflow, and minimises the number of expensive
     // calculations. Thanks to Nickolay Mladenov for this algorithm.
     I r_num = r.num;
@@ -119,6 +146,9 @@ namespace Simplex {
   template <typename I>
   rational<I> &rational<I>::operator-=(const rational<I> &r)
   {
+    if (inf) throw arithmetic_with_infinity{};
+    if (r.inf) throw arithmetic_with_infinity{};
+
     I r_num = r.num;
     I r_den = r.den;
 
@@ -135,6 +165,9 @@ namespace Simplex {
   template <typename I>
   rational<I> &rational<I>::operator*=(const rational<I> &r)
   {
+    if (inf) throw arithmetic_with_infinity{};
+    if (r.inf) throw arithmetic_with_infinity{};
+
     I r_num = r.num;
     I r_den = r.den;
 
@@ -149,6 +182,9 @@ namespace Simplex {
   template <typename I>
   rational<I> &rational<I>::operator/=(const rational<I> &r)
   {
+    if (inf) throw arithmetic_with_infinity{};
+    if (r.inf) throw arithmetic_with_infinity{};
+
     // Protect against self-modification
     I r_num = r.num;
     I r_den = r.den;
@@ -196,15 +232,21 @@ namespace Simplex {
 
   template <typename I>
   rational<I> rational<I>::operator-() const
-  { return rational<I>(-num, den); }
+  { return rational<I>(-num, den, -inf); }
 
   template <typename I>
   const rational<I> &rational<I>::operator++()
-  { num += den; return *this; }
+  { 
+    if (inf) throw arithmetic_with_infinity{};
+    num += den; return *this;
+  }
 
   template <typename I>
   const rational<I> &rational<I>::operator--()
-  { num -= den; return *this; }
+  {
+    if (inf) throw arithmetic_with_infinity{};
+    num -= den; return *this;
+  }
 
   template <typename I>
   rational<I> rational<I>::operator++(int)
@@ -220,6 +262,10 @@ namespace Simplex {
   template <typename int_type>
   inline bool rational<int_type>::operator<(const rational<int_type> &r) const
   {
+    if (inf < r.inf) return true;
+    if (inf > r.inf) return false;
+    if (inf) return false;
+
     // Avoid repeated construction
     int_type const zero(0);
 
@@ -302,7 +348,11 @@ namespace Simplex {
 
   template <typename I>
   inline bool rational<I>::operator==(const rational<I> &other) const
-  { return this->num == other.num and this->den == other.den; }
+  {
+    return (this->inf and this->inf == other.inf)
+       or  (!this->inf and !other.inf and
+             this->num == other.num   and this->den == other.den);
+  }
 
   template <typename I>
   inline bool rational<I>::operator!=(const rational<I> &other) const
@@ -312,6 +362,8 @@ namespace Simplex {
   // rationals are always normalized
   template <typename I>
   void rational<I>::normalize() {
+    if (inf) return;
+
     // Avoid repeated construction
     I zero(0);
 
