@@ -1,4 +1,4 @@
-#include "linear_programming_solver.h"
+#include "linear_programming.h"
 
 
 template <typename FieldType>
@@ -339,21 +339,18 @@ Simplex::Result<FieldType> Simplex::solveTwoPhaseSimplexLU(
   Vector<FieldType> b = problem.b;
   Vector<FieldType> c = problem.c;
 
-  std::cout << "HI"<<std::endl;
   auto lu = A.fullPivLu();
   int rank = lu.rank();
 
   Matrix<FieldType> L = Matrix<FieldType>::Identity(A.rows(), A.rows());
   L.template triangularView<Eigen::StrictlyLower>() = lu.matrixLU();
 
-  std::cout << "HI"<<std::endl;
   Matrix<FieldType> U = lu.matrixLU()
     .topRows(rank)
     .template triangularView<Eigen::Upper>();
   Matrix<FieldType> P = lu.permutationP();
   Matrix<FieldType> Q = lu.permutationQ();
 
-  std::cout << "HI"<<std::endl;
   // ensure that Ap has full row rank
   Matrix<FieldType> Ap(U.rows(), U.cols() + rank);
   for (int i = 0; i < U.cols(); ++i) { Ap.col(i) = U.col(i); }

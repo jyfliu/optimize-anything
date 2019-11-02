@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "../src/rational.h"
+#include "../src/utils/rational.h"
 typedef Simplex::rational<long long> R;
 
 // I probably should've made / used a testing harness

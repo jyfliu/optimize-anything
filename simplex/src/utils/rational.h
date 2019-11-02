@@ -490,7 +490,7 @@ namespace Simplex {
 
 }
 
-#include "../Eigen/Core"
+#include "../../Eigen/Core"
 
 namespace Eigen {
   template <typename IntType>

@@ -1,4 +1,4 @@
-#include "../src/eigen_utils.h"
+#include "../src/utils/eigen_utils.h"
 
 #include <iostream>
 

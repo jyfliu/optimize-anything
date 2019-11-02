@@ -1,8 +1,8 @@
 #include <iostream>
 #include <cmath>
 
-#include "../src/rational.h"
-#include "../src/linear_programming_solver.cpp"
+#include "../src/utils/rational.h"
+#include "../src/linear_programming.cpp"
 
 
 constexpr double epsilon = 1e-7;
