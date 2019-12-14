@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "../src/utils/rational.h"
-typedef Simplex::rational<long long> R;
+#include "../../src/utils/rational.hpp"
+typedef simplex::rational<long long> R;
 
 // I probably should've made / used a testing harness
 // whatever enjoy this mess
@@ -55,11 +55,11 @@ void test_constructors() {
   try {
     R r14(0, 0);
     A(false and "should have divided by zero");
-  } catch (Simplex::division_by_zero e) {}
+  } catch (simplex::division_by_zero e) {}
   try {
     R r15(300, 0);
     A(false and "should have divided by zero");
-  } catch (Simplex::division_by_zero e) {}
+  } catch (simplex::division_by_zero e) {}
 #undef A
 }
 

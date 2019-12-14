@@ -1,4 +1,4 @@
-#include "../src/utils/eigen_utils.h"
+#include "../../src/utils/eigen_utils.hpp"
 
 #include <iostream>
 
@@ -14,7 +14,7 @@ void test_subRows() {
   vec << 0, 2, 3;
   Eigen::MatrixXd res(3, 5);
   res << 1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20;
-  ASSERT(Simplex::subRows(mat, vec) == res);
+  ASSERT(simplex::subRows(mat, vec) == res);
 #undef ASSERT
 }
 

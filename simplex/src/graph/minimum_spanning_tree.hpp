@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../graph.hpp"
-#include "../disjoint_set.hpp"
+#include "graph.hpp"
+#include "../utils/disjoint_set.hpp"
 
 #include <algorithm>
 
@@ -19,7 +19,7 @@ namespace simplex {
       ds.make_set(v);
     auto list = graph.edges();
     std::sort(list.begin(), list.end(),
-        [](auto &&e1, auto &&e2){ return e1.weight < e2.weight; });
+        [](auto &&e1, auto &&e2) { return e1.weight < e2.weight; });
     for (auto &e : list) {
       if (ds.find(e.first()) != ds.find(e.second())) {
         mst.add_edge(e);

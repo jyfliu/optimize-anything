@@ -8,7 +8,7 @@
 #include <iostream>
 #include <functional>
 
-namespace Simplex {
+namespace simplex {
   class invalid_operation{};
   class size_mismatch{};
 
@@ -86,11 +86,11 @@ namespace Simplex {
 
   template <typename FieldType>
   std::ostream &operator<<(std::ostream &os,
-                           const Simplex::Result<FieldType> &r);
+                           const simplex::Result<FieldType> &r);
 
   template <typename FieldType>
   std::ostream &operator<<(std::ostream &os,
-                           const Simplex::LPProblem<FieldType> &p);
+                           const simplex::LPProblem<FieldType> &p);
 
 }
 

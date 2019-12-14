@@ -10,7 +10,7 @@
 #include <iostream>
 #include <cassert>
 
-namespace Simplex {
+namespace simplex {
   class division_by_zero{};
   class arithmetic_with_infinity{};
 
@@ -485,7 +485,7 @@ namespace Simplex {
   { rational<I> s(r); return s /= a; }
 
   template <typename I>
-  std::ostream &operator<<(std::ostream &os, const Simplex::rational<I> &r)
+  std::ostream &operator<<(std::ostream &os, const simplex::rational<I> &r)
   { os << r.numerator() << " / " << r.denominator(); return os; }
 
 }
@@ -494,20 +494,20 @@ namespace Simplex {
 
 namespace Eigen {
   template <typename IntType>
-  struct NumTraits<Simplex::rational<IntType>> 
-    : Eigen::GenericNumTraits<Simplex::rational<IntType>>
+  struct NumTraits<simplex::rational<IntType>> 
+    : Eigen::GenericNumTraits<simplex::rational<IntType>>
   {
-    typedef Simplex::rational<IntType> Real;
-    typedef Simplex::rational<IntType> NonInteger;
-    typedef Simplex::rational<IntType> Literal;
-    typedef Simplex::rational<IntType> Nested;
+    typedef simplex::rational<IntType> Real;
+    typedef simplex::rational<IntType> NonInteger;
+    typedef simplex::rational<IntType> Literal;
+    typedef simplex::rational<IntType> Nested;
 
     static inline Real epsilon() { return 0; }
     static inline Real dummy_precision() { return 0; }
-    static inline Simplex::rational<IntType> highest() {
+    static inline simplex::rational<IntType> highest() {
       return std::numeric_limits<IntType>::max();
     }
-    static inline Simplex::rational<IntType> lowest() {
+    static inline simplex::rational<IntType> lowest() {
       return std::numeric_limits<IntType>::max();
     }
     static inline int digits10() {

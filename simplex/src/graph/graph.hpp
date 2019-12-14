@@ -10,22 +10,25 @@ namespace simplex {
   public:
     iter_pair(const iterator_t &begin, const iterator_t &end)
       : _begin{begin}, _end{end} {}
-    const iterator_t &begin() const;
-    const iterator_t &end() const;
+    const iterator_t &begin() const { return _begin; }
+    const iterator_t &end() const { return _end; }
   };
+
+  template <typename Derived>
+  struct GraphTraits;
 
 #define _G_THIS static_cast<Derived*>(this)
 
   template <typename Derived>
   class _GraphCRTP {
   public:
-    using vertex = typename Derived::vertex;
-    using edge = typename Derived::edge;
+    using vertex = typename GraphTraits<Derived>::vertex;
+    using edge = typename GraphTraits<Derived>::edge;
     // all iters are const iters
-    using vertex_iter = typename Derived::vertex_iter;
-    using edge_iter = typename Derived::edge_iter;
-    using adjacent_iter = typename Derived::adjacent_iter;
-    using incident_iter = typename Derived::incident_iter;
+    using vertex_iter = typename GraphTraits<Derived>::vertex_iter;
+    using edge_iter = typename GraphTraits<Derived>::edge_iter;
+    using adjacent_iter = typename GraphTraits<Derived>::adjacent_iter;
+    using incident_iter = typename GraphTraits<Derived>::incident_iter;
 
     inline void
     clear()

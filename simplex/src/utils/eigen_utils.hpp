@@ -1,6 +1,6 @@
 #include "../../Eigen/Dense"
 
-namespace Simplex {
+namespace simplex {
 
   // typedef a vector of field members
   template <typename FieldType>
@@ -10,8 +10,8 @@ namespace Simplex {
   using Matrix = Eigen::Matrix<FieldType, Eigen::Dynamic, Eigen::Dynamic>;
 
   template <typename FieldType>
-  using Solver = std::function<Simplex::Vector<FieldType>
-    (Simplex::Matrix<FieldType>, Simplex::Vector<FieldType>)>;
+  using Solver = std::function<simplex::Vector<FieldType>
+    (simplex::Matrix<FieldType>, simplex::Vector<FieldType>)>;
 
   // what the f*ck eigen??
   template <typename Derived>
