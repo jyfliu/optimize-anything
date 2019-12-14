@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils/eigen_utils.h"
+#include "utils/eigen_utils.hpp"
 #include "../Eigen/Dense"
 
 #include <utility>
