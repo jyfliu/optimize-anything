@@ -19,9 +19,7 @@ namespace simplex {
       ds.make_set(v);
     auto list = graph.edges();
     std::sort(list.begin(), list.end(),
-        [](const typename _GraphCRTP<Derived>::edge &e1,
-           const typename _GraphCRTP<Derived>::edge &e2)
-        { return e1.weight < e2.weight; });
+        [](auto &&e1, auto &&e2){ return e1.weight < e2.weight; });
     for (auto &e : list) {
       if (ds.find(e.first()) != ds.find(e.second())) {
         mst.add_edge(e);

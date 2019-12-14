@@ -3,27 +3,15 @@
 #include <string>
 
 namespace simplex {
-  template <typename Label_t=int>
-  struct Vertex {
-    Label_t label;
-  };
 
-  template <typename Vertex_t=Vertex<>>
-  struct VertexIterator {
-    bool operator!=(const VertexIterator &other);
-    VertexIterator &operator++();
-    Vertex_t &operator*();
-  };
-
-  template <typename VertexIterator_t=VertexIterator<>>
-  struct IteratorPair {
-    const VertexIterator_t &begin() const;
-    const VertexIterator_t &end() const;
-  };
-
-  template <typename Vertex_t=Vertex<>>
-  struct Edge {
-    Vertex_t first, second;
+  template <typename iterator_t>
+  class iter_pair {
+    const iterator_t &_begin, &_end;
+  public:
+    iter_pair(const iterator_t &begin, const iterator_t &end)
+      : _begin{begin}, _end{end} {}
+    const iterator_t &begin() const;
+    const iterator_t &end() const;
   };
 
 #define _G_THIS static_cast<Derived*>(this)
@@ -38,12 +26,6 @@ namespace simplex {
     using edge_iter = typename Derived::edge_iter;
     using adjacent_iter = typename Derived::adjacent_iter;
     using incident_iter = typename Derived::incident_iter;
-
-    template <typename iterator_t>
-    struct iter_pair {
-      const iterator_t &begin() const;
-      const iterator_t &end() const;
-    };
 
     inline void
     clear()
@@ -72,12 +54,16 @@ namespace simplex {
 
     bool
     contains_vertex(const vertex &v)
-    { _G_THIS->contains_vertex(v); }
+    { return _G_THIS->contains_vertex(v); }
 
     // will add the vertices if they do not exist
     void
     add_edge(const edge &e)
     { _G_THIS->add_edge(e); }
+
+    bool
+    contains_edge(const edge &e)
+    { return _G_THIS->contains_edge(e); }
   };
 
 #undef _G_THIS
