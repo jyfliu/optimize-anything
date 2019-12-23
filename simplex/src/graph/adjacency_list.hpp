@@ -46,8 +46,8 @@ namespace simplex {
 
     iter_pair<adjacent_iter>
     adjacent(const vertex &v) const
-    { return iter_pair<edge_iter>{adjacent_iter{*this},
-                                  adjacent_iter{*this, true}}; }
+    { return iter_pair<edge_iter>{adjacent_iter{*this, v},
+                                  adjacent_iter{*this, v, true}}; }
 
     iter_pair<incident_iter>
     incident(const vertex &v) const;
@@ -201,10 +201,56 @@ namespace simplex {
     };
 
     class _adjacent_iter {
+      using iter_t = typename std::unordered_map<_i_edge, _i_edge_hash>::const_iterator;
+      const _that_t &_list;
+      iter_t it;
+    public:
+      _adjacent_iter(const _that_t &list, const vertex &v)
+        : _list{list}, it{list.adj[v].begin()}
+      {}
 
+      _adjacent_iter(const _that_t &list, const vertex &v, bool)
+        : _list{list}, it{list.adj[v].end()}
+      {}
+      
+      bool
+      operator!=(const _adjacent_iter &other) const
+      { return it != other.it; }
+
+      _adjacent_iter&
+      operator++()
+      { ++it; return *this; }
+
+      vertex
+      operator*()
+      { return _list.id_inv.at(it->to); }
     };
 
     class _incident_iter {
+      using iter_t = typename std::unordered_map<_i_edge, _i_edge_hash>::const_iterator;
+      const _that_t &_list;
+      iter_t it;
+      const vertex &_from;
+    public:
+      _incident_iter(const _that_t &list, const vertex &v)
+        : _list{list}, it{list.adj[v].begin()}, _from{v}
+      {}
+
+      _incident_iter(const _that_t &list, const vertex &v, bool)
+        : _list{list}, it{list.adj[v].end()}, _from{v}
+      {}
+      
+      bool
+      operator!=(const _incident_iter &other) const
+      { return it != other.it; }
+
+      _incident_iter&
+      operator++()
+      { ++it; return *this; }
+
+      edge
+      operator*()
+      { return edge{_from, _list.id_inv.at(it->to), it->weight}; }
 
     };
 

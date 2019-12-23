@@ -3,6 +3,7 @@
 #include "graph.hpp"
 #include "../utils/disjoint_set.hpp"
 
+#include <vector>
 #include <algorithm>
 
 namespace simplex {
@@ -17,7 +18,8 @@ namespace simplex {
 
     for (auto &v : graph.vertices())
       ds.make_set(v);
-    auto list = graph.edges();
+    auto itp = graph.edges();
+    auto list = std::vector<typename Derived::edge>(itp.begin(), itp.end());
     std::sort(list.begin(), list.end(),
         [](auto &&e1, auto &&e2) { return e1.weight < e2.weight; });
     for (auto &e : list) {
