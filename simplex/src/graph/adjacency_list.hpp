@@ -11,7 +11,7 @@ namespace simplex {
 
   // a directed, weighted graph
   template <typename Label_t=size_t, typename Weight_t = long long>
-  class AdjacencyList
+  struct AdjacencyList
     : public _GraphCRTP<AdjacencyList<Label_t, Weight_t>>
   {
     using _this_t = AdjacencyList<Label_t, Weight_t>;
@@ -46,11 +46,13 @@ namespace simplex {
 
     iter_pair<adjacent_iter>
     adjacent(const vertex &v) const
-    { return iter_pair<edge_iter>{adjacent_iter{*this, v},
-                                  adjacent_iter{*this, v, true}}; }
+    { return iter_pair<adjacent_iter>{adjacent_iter{*this, v},
+                                      adjacent_iter{*this, v, true}}; }
 
     iter_pair<incident_iter>
-    incident(const vertex &v) const;
+    incident(const vertex &v) const
+    { return iter_pair<incident_iter>{incident_iter{*this, v},
+                                      incident_iter{*this, v, true}}; }
 
     void
     add_vertex(const vertex &v)
@@ -63,7 +65,7 @@ namespace simplex {
     }
 
     inline bool
-    contains_vertex(const vertex &v)
+    contains_vertex(const vertex &v) const
     { return id.find(v) != id.end(); }
 
     void
@@ -76,13 +78,21 @@ namespace simplex {
     }
 
     inline bool
-    contains_edge(const edge &e)
+    contains_edge(const edge &e) const
     {
       if (!contains_vertex(e.first) or !contains_vertex(e.second)) 
         return false;
-      auto id1 = id[e.first], id2 = id[e.second];
+      auto id1 = id.at(e.first), id2 = id.at(e.second);
       return adj[id1].find(_i_edge{id2, e.weight}) != adj[id1].end();
     }
+
+    size_t
+    vertex_to_id(const vertex &v) const
+    { return id.at(v); }
+
+    const vertex&
+    id_to_vertex(size_t id) const
+    { return id_inv.at(id); }
 
     friend std::ostream&
     operator<<(std::ostream &o, const AdjacencyList<Label_t, Weight_t> &adj)
@@ -120,7 +130,7 @@ namespace simplex {
     using incident_iter = _incident_iter;
   private:
     struct _edge {
-      const Label_t first, second;
+      Label_t first, second;
       Weight_t weight;
     };
 
@@ -162,32 +172,57 @@ namespace simplex {
 
     class _edge_iter {
       using adj_list_t = std::vector<std::unordered_set<_i_edge, _i_edge_hash>>;
-      const _that_t &list;
+      const _that_t *list;
       typename adj_list_t::const_iterator cur_u;
       typename std::unordered_set<_i_edge, _i_edge_hash>::const_iterator cur_v;
+      
+      bool
+      _is_end() const
+      {
+        if (cur_u == list->adj.end()) return true;
+        if (cur_u + 1 == list->adj.end() and cur_v == cur_u->end()) return true;
+        return false;
+      }
     public:
-      _edge_iter(const _that_t &list)
-        : list{list}, cur_u{list.adj.begin()}, cur_v{list.adj[0].begin()}
+      explicit _edge_iter(const _that_t &list)
+        : list{&list}, cur_u{list.adj.begin()}, cur_v{list.adj[0].begin()}
       { if (cur_v == cur_u->end()) this->operator++(); }
 
-      _edge_iter(const _that_t &list, bool)
-        : list{list}, cur_u{list.adj.end()}, cur_v{list.adj[0].end()}
+      explicit _edge_iter(const _that_t &list, bool)
+        : list{&list}, cur_u{list.adj.end()}, cur_v{list.adj.back().begin()}
       {}
-      
+
+      _edge_iter(const _edge_iter &other)
+        : list{other.list}, cur_u{other.cur_u}, cur_v{other.cur_v}
+      {}
+
+      _edge_iter&
+      operator=(_edge_iter other) {
+        using std::swap;
+        swap(list, other.list);
+        swap(cur_u, other.cur_u);
+        swap(cur_v, other.cur_v);
+
+        return *this;
+      }
+
       bool
       operator!=(const _edge_iter &other) const
       {
-        if (list.adj != other.list.adj) return true;
-        if (cur_u == list.adj.end() and other.cur_u == other.list.adj.end()) 
-          return false;
+        bool me = _is_end();
+        bool you = other._is_end();
+        if (me and you) return false;
+        if ((me and !you) or (!me and you)) return true;
+        if (list->adj != other.list->adj) return true;
         return cur_u != other.cur_u or cur_v != other.cur_v;
       }
 
       _edge_iter&
       operator++()
       {
+        if (_is_end()) return *this;
         if (cur_v != cur_u->end() and ++cur_v != cur_u->end()) return *this;
-        for (; cur_u != list.adj.end(); cur_v = (++cur_u)->begin()) {
+        for (; cur_u != list->adj.end(); cur_v = (++cur_u)->begin()) {
           if (cur_v != cur_u->end()) return *this;
         }
         return *this;
@@ -195,22 +230,22 @@ namespace simplex {
 
       _edge
       operator*()
-      { return _edge{list.id_inv.at(cur_u - list.adj.begin()),
-                     list.id_inv.at(cur_v->to),
+      { return _edge{list->id_inv.at(cur_u - list->adj.begin()),
+                     list->id_inv.at(cur_v->to),
                      cur_v->weight}; }
     };
 
     class _adjacent_iter {
-      using iter_t = typename std::unordered_map<_i_edge, _i_edge_hash>::const_iterator;
-      const _that_t &_list;
+      using iter_t = typename std::unordered_set<_i_edge, _i_edge_hash>::const_iterator;
+      const _that_t *_list;
       iter_t it;
     public:
       _adjacent_iter(const _that_t &list, const vertex &v)
-        : _list{list}, it{list.adj[v].begin()}
+        : _list{&list}, it{list.adj[list.id.at(v)].begin()}
       {}
 
       _adjacent_iter(const _that_t &list, const vertex &v, bool)
-        : _list{list}, it{list.adj[v].end()}
+        : _list{&list}, it{list.adj[list.id.at(v)].end()}
       {}
       
       bool
@@ -223,21 +258,21 @@ namespace simplex {
 
       vertex
       operator*()
-      { return _list.id_inv.at(it->to); }
+      { return _list->id_inv.at(it->to); }
     };
 
     class _incident_iter {
-      using iter_t = typename std::unordered_map<_i_edge, _i_edge_hash>::const_iterator;
-      const _that_t &_list;
+      using iter_t = typename std::unordered_set<_i_edge, _i_edge_hash>::const_iterator;
+      const _that_t *_list;
       iter_t it;
-      const vertex &_from;
+      const vertex *_from;
     public:
       _incident_iter(const _that_t &list, const vertex &v)
-        : _list{list}, it{list.adj[v].begin()}, _from{v}
+        : _list{&list}, it{list.adj[list.id.at(v)].begin()}, _from{v}
       {}
 
       _incident_iter(const _that_t &list, const vertex &v, bool)
-        : _list{list}, it{list.adj[v].end()}, _from{v}
+        : _list{&list}, it{list.adj[list.id.at(v)].end()}, _from{v}
       {}
       
       bool
@@ -250,7 +285,7 @@ namespace simplex {
 
       edge
       operator*()
-      { return edge{_from, _list.id_inv.at(it->to), it->weight}; }
+      { return edge{_from, _list->id_inv.at(it->to), it->weight}; }
 
     };
 

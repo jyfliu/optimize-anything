@@ -31,9 +31,9 @@ namespace simplex {
     size_t
     find(const T &t)
     {
-      auto &it = id.find(t);
-      if (it == id.end()) return -1;
-      return _find(*it);
+      auto it = id.find(t);
+      if (it == id.end()) return end();
+      return _find(it->second);
     }
 
     inline size_t
@@ -43,9 +43,9 @@ namespace simplex {
     void
     union_set(const T &u, const T &v)
     {
-      auto &it1 = id.find(u), &it2 = id.find(v);
+      auto it1 = id.find(u), it2 = id.find(v);
       if (it1 == id.end() or it2 == id.end()) return;
-      auto x = _find(*it1), y = _find(*it2);
+      auto x = _find(it1->second), y = _find(it2->second);
       if (r[x] > r[y]) p[y] = x;
       else if (r[y] > r[x]) p[x] = y;
       else {

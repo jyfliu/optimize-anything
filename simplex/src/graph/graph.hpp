@@ -6,7 +6,7 @@ namespace simplex {
 
   template <typename iterator_t>
   class iter_pair {
-    const iterator_t &_begin, &_end;
+    iterator_t _begin, _end;
   public:
     iter_pair(const iterator_t &begin, const iterator_t &end)
       : _begin{begin}, _end{end} {}
@@ -18,6 +18,7 @@ namespace simplex {
   struct GraphTraits;
 
 #define _G_THIS static_cast<Derived*>(this)
+#define _G_CTHIS static_cast<const Derived*>(this)
 
   template <typename Derived>
   class _GraphCRTP {
@@ -36,19 +37,19 @@ namespace simplex {
 
     inline iter_pair<vertex_iter>
     vertices() const
-    { return _G_THIS->vertices(); };
+    { return _G_CTHIS->vertices(); };
 
     inline iter_pair<edge_iter>
     edges() const
-    { return _G_THIS->edges(); };
+    { return _G_CTHIS->edges(); };
 
     inline iter_pair<adjacent_iter>
     adjacent(const vertex &v) const
-    { return _G_THIS->adjacent(v); }
+    { return _G_CTHIS->adjacent(v); }
 
     inline iter_pair<incident_iter>
     incident(const vertex &v) const
-    { return _G_THIS->incident(v); }
+    { return _G_CTHIS->incident(v); }
 
     // add if does not exist, do nothing if it does
     void
@@ -56,8 +57,8 @@ namespace simplex {
     { _G_THIS->add_vertex(v); }
 
     bool
-    contains_vertex(const vertex &v)
-    { return _G_THIS->contains_vertex(v); }
+    contains_vertex(const vertex &v) const
+    { return _G_CTHIS->contains_vertex(v); }
 
     // will add the vertices if they do not exist
     void
@@ -65,11 +66,20 @@ namespace simplex {
     { _G_THIS->add_edge(e); }
 
     bool
-    contains_edge(const edge &e)
-    { return _G_THIS->contains_edge(e); }
+    contains_edge(const edge &e) const
+    { return _G_CTHIS->contains_edge(e); }
+
+    size_t
+    vertex_to_id(const vertex &v) const
+    { return _G_CTHIS->vertex_to_id(v); }
+
+    const vertex&
+    id_to_vertex(size_t id) const
+    { return _G_CTHIS->id_to_vertex(id); }
   };
 
 #undef _G_THIS
+#undef _G_CTHIS
 }
 
 
