@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graph.hpp"
+#include "base_graph.hpp"
 
 #include "minimum_spanning_tree.hpp"
 

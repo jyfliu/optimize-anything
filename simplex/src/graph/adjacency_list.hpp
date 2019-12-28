@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graph.hpp"
+#include "base_graph.hpp"
 
 #include <iostream>
 #include <vector>
@@ -265,7 +265,7 @@ namespace simplex {
       using iter_t = typename std::unordered_set<_i_edge, _i_edge_hash>::const_iterator;
       const _that_t *_list;
       iter_t it;
-      const vertex *_from;
+      vertex _from;
     public:
       _incident_iter(const _that_t &list, const vertex &v)
         : _list{&list}, it{list.adj[list.id.at(v)].begin()}, _from{v}

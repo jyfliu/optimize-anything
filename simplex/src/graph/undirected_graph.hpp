@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include "graph.hpp"
+#include "base_graph.hpp"
 #include "adjacency_list.hpp"
 
 namespace simplex {
@@ -70,6 +70,33 @@ namespace simplex {
     const vertex&
     id_to_vertex(size_t id) const
     { return _impl.id_to_vertex(id); }
+
+    // TODO use template metaprogramming to disable these default implementations
+    // and use the derived implementations, if they exist
+    size_t
+    order() const
+    {
+      size_t cnt = 0;
+      auto vs = vertices();
+      for (auto it = vs.begin(); it != vs.end(); ++it) ++cnt;
+      return cnt;
+    }
+
+    inline bool
+    empty() const
+    {
+      auto v = vertices();
+      if (v.begin() == v.end()) return true;
+      return false;
+    }
+
+    size_t
+    size() const
+    {
+      size_t cnt = 0;
+      for (auto &&e : edges()) ++cnt;
+      return cnt;
+    }
 
     friend std::ostream&
     operator<<(std::ostream &o, const _this_t &graph)
