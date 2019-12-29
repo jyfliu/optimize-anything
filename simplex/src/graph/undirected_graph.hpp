@@ -55,13 +55,25 @@ namespace simplex {
     add_edge(const edge &e)
     {
       if (contains_edge(e)) return;
-      _impl.add_edge(e);
+      _impl.add_edge(e); // TODO does not work with self loops
       _impl.add_edge(edge{e.second, e.first, e.weight});
     }
 
     inline bool
     contains_edge(const edge &e)
     { return _impl.contains_edge(e); }
+
+    inline size_t
+    order() const
+    { return _impl.order(); }
+
+    inline bool
+    empty() const
+    { return _impl.empty(); }
+
+    inline size_t
+    size() const
+    { return _impl.size() / 2; }
 
     size_t
     vertex_to_id(const vertex &v) const
@@ -70,33 +82,6 @@ namespace simplex {
     const vertex&
     id_to_vertex(size_t id) const
     { return _impl.id_to_vertex(id); }
-
-    // TODO use template metaprogramming to disable these default implementations
-    // and use the derived implementations, if they exist
-    size_t
-    order() const
-    {
-      size_t cnt = 0;
-      auto vs = vertices();
-      for (auto it = vs.begin(); it != vs.end(); ++it) ++cnt;
-      return cnt;
-    }
-
-    inline bool
-    empty() const
-    {
-      auto v = vertices();
-      if (v.begin() == v.end()) return true;
-      return false;
-    }
-
-    size_t
-    size() const
-    {
-      size_t cnt = 0;
-      for (auto &&e : edges()) ++cnt;
-      return cnt;
-    }
 
     friend std::ostream&
     operator<<(std::ostream &o, const _this_t &graph)

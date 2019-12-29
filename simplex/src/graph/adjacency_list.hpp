@@ -86,11 +86,11 @@ namespace simplex {
       return adj[id1].find(_i_edge{id2, e.weight}) != adj[id1].end();
     }
 
-    size_t
+    inline size_t
     vertex_to_id(const vertex &v) const
     { return id.at(v); }
 
-    const vertex&
+    inline const vertex&
     id_to_vertex(size_t id) const
     { return id_inv.at(id); }
 

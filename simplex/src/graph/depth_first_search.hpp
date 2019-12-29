@@ -17,7 +17,8 @@
     \
     template <typename X=Visitor>\
     inline void\
-    _ ## fn_name(const param_t &, const Graph &, long) {}\
+    _ ## fn_name(const param_t &, const Graph &, long)\
+    {}\
     \
   public:\
     inline void\
@@ -69,7 +70,7 @@ namespace simplex {
     while (!stack.empty()) {
       vertex u = stack.top();
       stack.pop();
-      visited[graph.vertex_to_id(u)] = GRAY;                                    visitor.discover_vertex(start, graph);
+      visited[graph.vertex_to_id(u)] = GRAY;                                    visitor.discover_vertex(u, graph);
       for (auto &&e : graph.incident(u)) {
         vertex v = e.second;                                                    visitor.examine_edge(e, graph);
         switch(visited[graph.vertex_to_id(v)]) {
