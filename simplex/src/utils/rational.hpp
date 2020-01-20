@@ -508,7 +508,7 @@ namespace Eigen {
       return std::numeric_limits<IntType>::max();
     }
     static inline simplex::rational<IntType> lowest() {
-      return std::numeric_limits<IntType>::max();
+      return std::numeric_limits<IntType>::lowest();
     }
     static inline int digits10() {
       return std::numeric_limits<IntType>::digits10;

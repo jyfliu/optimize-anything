@@ -64,12 +64,11 @@ namespace simplex {
     const Matrix<FieldType> A;
     const Vector<FieldType> b;
     const Vector<FieldType> c;
-    LPProblem(const Matrix<FieldType> &A, const Vector<FieldType> &b,
-              const Vector<FieldType> &c);
+    LPProblem(Matrix<FieldType> A, Vector<FieldType> b, Vector<FieldType> c);
   };
 
   template <typename FieldType>
-  Result<FieldType> solve(const LPProblem<FieldType> &problem);
+  Result<FieldType> lp_solve(const LPProblem<FieldType> &problem);
 
   template <typename FieldType>
   Result<FieldType> solveInteriorPoint(const LPProblem<FieldType> &problem);

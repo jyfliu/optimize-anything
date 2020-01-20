@@ -11,20 +11,20 @@ A library for optimizing anything. Implemented in c++ and eigen, interface (todo
   - maximal matching and minimum covers
 
 (todo)
-- Fourier-Motzkin Elimination
 - Column generation
-- interior point methods
-- cutting plane methods
 - Christofides algorithm (tsp)
 - gradient descent
+- semidefinite programming
 - simulated annealing (application: CCO 2018 problem 2)
 - applications
 
-(very far in the future todo)
+(very far in the future todo
+- Fourier-Motzkin Elimination)
+- interior point methods
+- more cutting plane methods
 - other combinatorial optimization (euclidian tsp?)
 - stochastic programming
 - robust optimization
-- semidefinite programming
 
 ## Notes:
 - I'm calling the main folder simplex until I can think of a better name

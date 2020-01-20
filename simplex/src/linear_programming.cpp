@@ -96,10 +96,10 @@ std::ostream &simplex::operator<<(std::ostream &os,
 
 
 template <typename FieldType>
-simplex::LPProblem<FieldType>::LPProblem(const Matrix<FieldType> &A,
-                                         const Vector<FieldType> &b,
-                                         const Vector<FieldType> &c)
-  : A{A}, b{b}, c{c}
+simplex::LPProblem<FieldType>::LPProblem(Matrix<FieldType> A,
+                                         Vector<FieldType> b,
+                                         Vector<FieldType> c)
+  : A{std::move(A)}, b{std::move(b)}, c{std::move(c)}
 {
   if (A.rows() != b.rows()) throw size_mismatch{};
   if (A.cols() != c.rows()) throw size_mismatch();
@@ -228,7 +228,7 @@ namespace {
 }
 
 template <typename FieldType>
-simplex::Result<FieldType> simplex::solve(const simplex::LPProblem<FieldType> &problem)
+simplex::Result<FieldType> simplex::lp_solve(const simplex::LPProblem<FieldType> &problem)
 { // TODO: use different solvers
   return simplex::solveTwoPhaseSimplexQR(problem);
 }
